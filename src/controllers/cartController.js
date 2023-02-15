@@ -1,6 +1,7 @@
-const cart = require("../models/Cart");
+// const cart = require("../models/Cart");
 const Cart = require("../models/Cart");
 const CartItem = require("../models/Cart");
+const Product = require("../models/Product");
 const { NotFoundError, BadRequestError } = require("../utils/errors");
 
 //CART
@@ -54,27 +55,53 @@ exports.getCartItemsByCartId = async (req, res, next) => {
   return res.json(cartItem);
 };
 
-//Add item to Cart
+//Add item to Cart //mappa?
+//DENNA FUNKAR ISHHHHHHHH
 exports.addItemToCart = async (req, res) => {
   const cartId = req.params.cartId;
-  //const { CartItem } = req.body
-  const name = req.body.name;
+  const itemId = req.body.itemId;
+  const itemDetails = await Product.findById(itemId);
+  const totalSum = req.body.totalSum;
+
+  if (!Cart) throw new BadRequestError("You must provide a cart id");
+  let updatedCart = await Cart.findById(cartId);
+
+  console.log(itemDetails);
+
+  updatedCart.items.push({
+    itemId: itemDetails.id,
+    name: itemDetails.name,
+    price: itemDetails.price,
+    quantity: itemDetails.quantity,
+    totalSum: parseInt(itemDetails.price * itemDetails.quantity),
+  });
+  updatedCart.save();
+
+  return res.json(updatedCart);
+};
+
+/*
+exports.addItemToCart = async (req, res) => {
+  const cartId = req.params.cartId;
+  const itemId = req.body.itemId;
+  name = req.body.name;
   const price = req.body.price;
   const quantity = req.body.quantity;
 
-  if (!cartId) throw new BadRequestError("You have to provide a cart id");
-
-  const newCartItem = await CartItem.create({
-    name: name,
-    price: price,
-    quantity: quantity,
-  });
-  console.log(newCartItem);
-  return res
-    .setHeader("Location", `/api/v1/carts/${cartId}/${newCartItem._id}`)
-    .status(201)
-    .json(newCartItem);
-};
+  let cart = await Cart.findById(cartId);
+  if (cart) {
+    let itemIndex = cart.items.findIndex((i) => i.itemId === itemId);
+    if (itemIndex > -1) {
+      let cartItem = cart.items[itemIndex];
+      cartItem.quantity = quantity;
+      cart.items[itemIndex] = cartItem;
+    } else {
+      cart.items.push({ itemId, name, price, quantity });
+    }
+    cart.save();
+    return res.status(201).send(Cart);
+  }
+};*/
 
 //Delete item from cart
 //splice??? findIndex??
@@ -85,15 +112,4 @@ if (!itemToDelete) throw new NotFoundError("That cartitem does not exist");
 await itemToDelete.delete();
 
 return res.sendStatus(204);
-*/
-/*
-RADERAR EN HEL CART!!!!
-exports.deleteItemFromCart = async (req, res, next) => {
-  const cartItemId = req.params.cartItemId;
-  const cartItemToDelete = await CartItem.findById(cartItemId);
-  if (!cartItemToDelete)
-    throw new NotFoundError("This item does not exist in cart");
-  await cartItemToDelete.delete();
-  return res.sendStatus(204);
-};
 */

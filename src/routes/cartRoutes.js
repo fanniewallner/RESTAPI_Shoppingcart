@@ -16,11 +16,13 @@ router.delete("/:cartId", deleteCartById);
 //CartItems
 //Get all cartItems by cartId
 //api/v1/cart/:cartItem
-router.get("/cart/:cartId", getCartItemsByCartId);
+router.get("/carts/:cartId", getCartItemsByCartId);
 
+//POST /api/v1/todos - create new todo (om nested /api/v1/lists/:listId/todos)
 //Add cartItem to cart
 //api/v1/cart/:cartItem
-router.post("/cart/:cartId", addItemToCart);
+router.post("/:cartId/addProduct", addItemToCart);
+//router.post("/cart/:cartId", addItemToCart);
 
 //delete item from cart
 //api/v1/
