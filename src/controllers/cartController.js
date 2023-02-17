@@ -60,7 +60,7 @@ exports.addItemToCart = async (req, res) => {
 
   const foundItem = cart.items.find((prod) => prod.productId == productId);
 
-  if (cart.items.length >= 1) {
+  if (cart.items.length > 1) {
     if (foundItem) {
       foundItem.quantity += quantity;
       foundItem.price = product.price;
@@ -99,14 +99,8 @@ exports.deleteItemFromCart = async (req, res) => {
 
   const foundItem = cart.items.find((prod) => prod.productId == productId);
 
-  if (cart.items.length >= 1) {
-    if ((foundItem.quantity = 0)) {
-      cart.items.splice(productToDelete);
-    }
-    if (!foundItem) {
-      throw new NotFoundError("This item does not exist in this cart");
-    }
-    if (foundItem) {
+  if (foundItem) {
+    if (foundItem.quantity > 1) {
       foundItem.quantity -= quantity;
       foundItem.price = product.price;
       foundItem.itemTotalPrice = foundItem.price * foundItem.quantity;
@@ -114,11 +108,11 @@ exports.deleteItemFromCart = async (req, res) => {
       cart.items.splice(productToDelete, quantity);
     }
   } else {
-    cart.items.splice(productToDelete, quantity);
+    throw new NotFoundError("Can not find this product in cart");
   }
 
   cart.totalSum -= productToDelete.itemTotalPrice;
 
   const updatedCart = await cart.save();
-  return res.status(200).json(updatedCart);
+  return res.status(201).json(updatedCart);
 };
