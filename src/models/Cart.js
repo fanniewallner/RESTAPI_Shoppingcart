@@ -10,7 +10,6 @@ const CartItemSchema = new mongoose.Schema({
   quantity: {
     type: Number,
     default: 1,
-    min: 0,
   },
   itemTotalPrice: Number,
   _id: false,
@@ -24,7 +23,6 @@ const CartSchema = new mongoose.Schema({
   totalSum: {
     type: Number,
     default: 0,
-    min: 0,
   },
 });
 
