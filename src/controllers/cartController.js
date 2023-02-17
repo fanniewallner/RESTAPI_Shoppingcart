@@ -10,7 +10,7 @@ exports.getCartById = async (req, res, next) => {
   const cart = await Cart.findById(cartId);
 
   if (!cart) throw new NotFoundError("This cart does not exist");
-  return res.json(cart);
+  if (cart) return res.status(201).json(cart);
 };
 
 exports.createNewCart = async (req, res, next) => {
@@ -35,81 +35,85 @@ exports.deleteCartById = async (req, res, next) => {
 
   if (!cartToDelete) throw new NotFoundError("This cart does not exist");
   await cartToDelete.delete();
-  return res.sendStatus(204);
+  return res.status(204).json(cartToDelete);
 };
 
-//CARTITEMS
-exports.getCartItemsByCartId = async (req, res, next) => {
-  const cartId = req.params.cartId;
-  const cart = await cart.findById(cartId);
-
-  if (!cart) throw new NotFoundError("That cart does not exist");
-
-  const filters = {};
-  if (req.query?.cartId) filters.cart = req.query.cartId;
-
-  const cartItems = await this.getCartItemsByCartId.find(filters);
-
-  if (!cartItems)
-    throw new NotFoundError("That cart does not have any items yet");
-  return res.json(cartItem);
-};
-
-//Add item to Cart //mappa?
-//DENNA FUNKAR ISHHHHHHHH
+//Add item to Cart
+//DENNA FUNKAR ISHHHHHHHH (INTE TOTALSUM)
 exports.addItemToCart = async (req, res) => {
   const cartId = req.params.cartId;
-  const itemId = req.body.itemId;
-  const itemDetails = await Product.findById(itemId);
-  const totalSum = req.body.totalSum;
+  const productId = req.body.productId;
+  const quantity = req.body.quantity;
+  //const itemDetails = await Product.findById(itemId);
 
-  if (!Cart) throw new BadRequestError("You must provide a cart id");
-  let updatedCart = await Cart.findById(cartId);
+  const cart = await Cart.findById(cartId);
+  if (!cart) throw new NotFoundError("Sorry, this shoppingcart does not exist");
 
-  console.log(itemDetails);
+  const product = await Product.findById(productId);
+  if (!product) throw new NotFoundError("Sorry, this product does not exist");
 
-  updatedCart.items.push({
-    itemId: itemDetails.id,
-    name: itemDetails.name,
-    price: itemDetails.price,
-    quantity: itemDetails.quantity,
-    totalSum: parseInt(itemDetails.price * itemDetails.quantity),
-  });
-  updatedCart.save();
+  //const foundItem = cart.items.find((prod) => prod.productId == productId);
 
-  return res.json(updatedCart);
+  const productToCart = {
+    productId: productId,
+    name: product.name,
+    price: product.price,
+    quantity: quantity,
+    //itemTotalPrice: product.price,
+    itemTotalPrice: product.price * quantity,
+  };
+
+  //console.log(productToCart);
+  const foundItem = cart.items.find((prod) => prod.productId == productId);
+
+  if (cart.items.length >= 1) {
+    if (foundItem) {
+      foundItem.quantity += quantity;
+      foundItem.price = product.price;
+      //foundItem.itemTotalPrice += product.price;
+      foundItem.itemTotalPrice = foundItem.price * foundItem.quantity;
+    } else {
+      cart.items.push(productToCart);
+    }
+  } else {
+    cart.items.push(productToCart);
+  }
+
+  cart.totalSum += productToCart.itemTotalPrice;
+
+  const updatedCart = await cart.save();
+  //console.log(updatedCart);
+  return res.status(200).json(updatedCart);
 };
 
-/*
-exports.addItemToCart = async (req, res) => {
+//RESPONSERNA ÄR FEL HÄR MEN DEN TAR BORT EN PRODUKT
+exports.deleteItemFromCart = async (req, res) => {
   const cartId = req.params.cartId;
-  const itemId = req.body.itemId;
-  name = req.body.name;
-  const price = req.body.price;
+  const productId = req.body.productId;
   const quantity = req.body.quantity;
 
-  let cart = await Cart.findById(cartId);
-  if (cart) {
-    let itemIndex = cart.items.findIndex((i) => i.itemId === itemId);
-    if (itemIndex > -1) {
-      let cartItem = cart.items[itemIndex];
-      cartItem.quantity = quantity;
-      cart.items[itemIndex] = cartItem;
+  const cart = await Cart.findById(cartId);
+  if (!cart) throw new BadRequestError("You must provide a cart id");
+
+  const product = await Product.findById(productId);
+  if (!product) throw new BadRequestError("You must provide a cart id");
+
+  const itemToDelete = cart.items.find((prod) => prod.productId == productId);
+
+  if (cart.items.length < 0)
+    return new GraphQLError("There are no products in this cart");
+
+  if (cart.items.length >= 1) {
+    if (itemToDelete) {
+      itemToDelete.quantity -= quantity;
+      itemToDelete.price -= product.price;
     } else {
-      cart.items.push({ itemId, name, price, quantity });
+      cart.items.splice(itemToDelete);
     }
-    cart.save();
-    return res.status(201).send(Cart);
+  } else {
+    cart.items.splice(itemToDelete);
   }
-};*/
 
-//Delete item from cart
-//splice??? findIndex??
-/*
-const cartItemId = req.params.id;
-const itemToDelete = await CartItem.findById(cartItemId);
-if (!itemToDelete) throw new NotFoundError("That cartitem does not exist");
-await itemToDelete.delete();
-
-return res.sendStatus(204);
-*/
+  cart.save();
+  return res.status(204).json(cart);
+};

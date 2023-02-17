@@ -1,13 +1,18 @@
 const mongoose = require("mongoose");
 
 const CartItemSchema = new mongoose.Schema({
-  itemId: {
+  productId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Product",
   },
   name: String,
   price: Number,
-  quantity: Number,
+  quantity: {
+    type: Number,
+    default: 1,
+  },
+  itemTotalPrice: Number,
+  _id: false,
 });
 
 const CartSchema = new mongoose.Schema({
@@ -17,18 +22,8 @@ const CartSchema = new mongoose.Schema({
   },
   totalSum: {
     type: Number,
+    default: 0,
   },
 });
-
-/*
-const CartSchema = new mongoose.Schema({
-  items: {
-    type: [mongoose.Schema.Types.ObjectId],
-    ref: "CartItem",
-  },
-  totalSum: {
-    type: Number,
-  },
-});*/
 
 module.exports = mongoose.model("Cart", CartSchema);
