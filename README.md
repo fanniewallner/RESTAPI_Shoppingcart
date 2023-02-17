@@ -6,21 +6,29 @@
 
 **getAllProducts**
 http://localhost:5001/api/v1/products
+
 body: none
+
 **getProductById**
 http://localhost:5001/api/v1/products/:productId
+
 body: none
 
 ### CART-ROUTES
 
 **getCartById**
 http://localhost:5001/api/v1/carts/:cartId
+
 body: none
+
 **createNewCart**
 http://localhost:5001/api/v1/carts/
+
 body: none
+
 **addItemToCart**
 http://localhost:5001/api/v1/carts/:cartId/addProduct
+
 body:
 
 ```
@@ -32,6 +40,7 @@ body:
 
 **deleteItemFromCart**
 http://localhost:5001/api/v1/carts/:cartId/deleteProduct
+
 body:
 
 ```
@@ -43,4 +52,5 @@ body:
 
 **deleteCartById**
 http://localhost:5001/api/v1/carts/:cartId/deleteCart
+
 body: none
