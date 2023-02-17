@@ -29,7 +29,7 @@ exports.createNewCart = async (req, res, next) => {
     .json(newCart);
 };
 
-exports.deleteCartById = async (req, res, next) => {
+exports.deleteCartById = async (req, res) => {
   const cartId = req.params.cartId;
   const cartToDelete = await Cart.findById(cartId);
 
@@ -39,12 +39,10 @@ exports.deleteCartById = async (req, res, next) => {
 };
 
 //Add item to Cart
-//DENNA FUNKAR ISHHHHHHHH (INTE TOTALSUM)
 exports.addItemToCart = async (req, res) => {
   const cartId = req.params.cartId;
   const productId = req.body.productId;
   const quantity = req.body.quantity;
-  //const itemDetails = await Product.findById(itemId);
 
   const cart = await Cart.findById(cartId);
   if (!cart) throw new NotFoundError("Sorry, this shoppingcart does not exist");
@@ -52,25 +50,20 @@ exports.addItemToCart = async (req, res) => {
   const product = await Product.findById(productId);
   if (!product) throw new NotFoundError("Sorry, this product does not exist");
 
-  //const foundItem = cart.items.find((prod) => prod.productId == productId);
-
   const productToCart = {
     productId: productId,
     name: product.name,
     price: product.price,
     quantity: quantity,
-    //itemTotalPrice: product.price,
     itemTotalPrice: product.price * quantity,
   };
 
-  //console.log(productToCart);
   const foundItem = cart.items.find((prod) => prod.productId == productId);
 
   if (cart.items.length >= 1) {
     if (foundItem) {
       foundItem.quantity += quantity;
       foundItem.price = product.price;
-      //foundItem.itemTotalPrice += product.price;
       foundItem.itemTotalPrice = foundItem.price * foundItem.quantity;
     } else {
       cart.items.push(productToCart);
@@ -82,38 +75,50 @@ exports.addItemToCart = async (req, res) => {
   cart.totalSum += productToCart.itemTotalPrice;
 
   const updatedCart = await cart.save();
-  //console.log(updatedCart);
   return res.status(200).json(updatedCart);
 };
 
-//RESPONSERNA ÄR FEL HÄR MEN DEN TAR BORT EN PRODUKT
 exports.deleteItemFromCart = async (req, res) => {
   const cartId = req.params.cartId;
   const productId = req.body.productId;
   const quantity = req.body.quantity;
 
   const cart = await Cart.findById(cartId);
-  if (!cart) throw new BadRequestError("You must provide a cart id");
+  if (!cart) throw new NotFoundError("Sorry, this shoppingcart does not exist");
 
   const product = await Product.findById(productId);
-  if (!product) throw new BadRequestError("You must provide a cart id");
+  if (!product) throw new NotFoundError("Sorry, this product does not exist");
 
-  const itemToDelete = cart.items.find((prod) => prod.productId == productId);
+  const productToDelete = {
+    productId: productId,
+    name: product.name,
+    price: product.price,
+    quantity: quantity,
+    itemTotalPrice: product.price * quantity,
+  };
 
-  if (cart.items.length < 0)
-    return new GraphQLError("There are no products in this cart");
+  const foundItem = cart.items.find((prod) => prod.productId == productId);
 
   if (cart.items.length >= 1) {
-    if (itemToDelete) {
-      itemToDelete.quantity -= quantity;
-      itemToDelete.price -= product.price;
+    if ((foundItem.quantity = 0)) {
+      cart.items.splice(productToDelete);
+    }
+    if (!foundItem) {
+      throw new NotFoundError("This item does not exist in this cart");
+    }
+    if (foundItem) {
+      foundItem.quantity -= quantity;
+      foundItem.price = product.price;
+      foundItem.itemTotalPrice = foundItem.price * foundItem.quantity;
     } else {
-      cart.items.splice(itemToDelete);
+      cart.items.splice(productToDelete, quantity);
     }
   } else {
-    cart.items.splice(itemToDelete);
+    cart.items.splice(productToDelete, quantity);
   }
 
-  cart.save();
-  return res.status(204).json(cart);
+  cart.totalSum -= productToDelete.itemTotalPrice;
+
+  const updatedCart = await cart.save();
+  return res.status(200).json(updatedCart);
 };
